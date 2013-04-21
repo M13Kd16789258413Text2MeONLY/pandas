@@ -1838,6 +1838,8 @@ class MultiIndex(Index):
 
             return result
 
+    _getitem_bool = __getitem__
+
     def take(self, indexer, axis=None):
         """
         Analogous to ndarray.take
