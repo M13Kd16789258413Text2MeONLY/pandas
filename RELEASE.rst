@@ -52,6 +52,8 @@ pandas 0.11.1
     the original (GH3680_, GH919_)
   - Access to historical Google Finance data in pandas.io.data (GH3814_)
   - Add pandas.msgpack submodule
+  - ``pd.read_msgpack()`` and ``pd.to_msgpack()`` are now a supported method of serialization
+    of arbitrary pandas (and python objects) in a lightweight portable binary format (GH686_)
 
 **Improvements to existing features**
 
@@ -226,6 +228,7 @@ pandas 0.11.1
 
 .. _GH3164: https://github.com/pydata/pandas/issues/3164
 .. _GH2786: https://github.com/pydata/pandas/issues/2786
+.. _GH686: https://github.com/pydata/pandas/issues/686
 .. _GH2194: https://github.com/pydata/pandas/issues/2194
 .. _GH3230: https://github.com/pydata/pandas/issues/3230
 .. _GH3425: https://github.com/pydata/pandas/issues/3425

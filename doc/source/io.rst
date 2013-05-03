@@ -1307,6 +1307,56 @@ one can use the ExcelWriter class, as in the following example:
 
 .. _io.hdf5:
 
+Serialization
+-------------
+
+msgpack
+~~~~~~~
+
+.. _io.msgpack:
+
+.. versionadded:: 0.11.1
+
+Starting in 0.11.1, pandas is supporting the ``msgpack`` format for 
+object serialization. This is a lightweight portable binary format, similar
+to binary JSON, that is highly space efficient, and provides good performance 
+both on the writing (serialization), and reading (deserialization).
+
+.. ipython:: python
+
+   df = DataFrame(np.random.rand(5,2),columns=list('AB'))
+   df.to_msgpack('foo.msg')
+   pd.read_msgpack('foo.msg')
+   s = Series(np.random.rand(5),index=date_range('20130101',periods=5))
+
+You can pass a list of objects and you will receive them back on deserialization.
+
+.. ipython:: python
+
+   pd.to_msgpack('foo.msg', df, 'foo', np.array([1,2,3]), s)
+   pd.read_msgpack('foo.msg')
+
+You can pass ``iterator=True`` to iterator over the unpacked results
+
+.. ipython:: python
+
+   for o in pd.read_msgpack('foo.msg',iterator=True):
+       print o
+
+
+You can pass ``append=True`` to the writer to append to an existing pack
+
+.. ipython:: python
+
+   df.to_msgpack('foo.msg',append=True)
+   pd.read_msgpack('foo.msg')
+
+.. ipython:: python
+   :suppress:
+   :okexcept:
+
+   os.remove('foo.msg')
+
 HDF5 (PyTables)
 ---------------
 
