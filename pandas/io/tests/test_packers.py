@@ -23,10 +23,7 @@ from pandas import concat, Timestamp, tslib
 from numpy.testing.decorators import slow
 nan = np.nan
 
-from pandas.io.packers import to_msgpack, read_msgpack, _USE_MSGPACK
-
-if not _USE_MSGPACK:
-    raise nose.SkipTest('no msgpack')
+from pandas.io.packers import to_msgpack, read_msgpack
 
 _multiprocess_can_split_ = False
 
@@ -87,6 +84,9 @@ class TestNumpy(Test):
                        all(map(lambda x,y: type(x) == type(y), x, x_rec))
 
     def test_list_numpy_float_complex(self):
+        if not hasattr(np,'complex128'):
+            raise nose.SkipTest('numpy cant handle complex128')
+        
         x = [np.float32(np.random.rand()) for i in xrange(5)] + \
           [np.complex128(np.random.rand()+1j*np.random.rand()) for i in xrange(5)]
         x_rec = self.encode_decode(x)
@@ -208,10 +208,6 @@ class TestIndex(Test):
     def test_unicode(self):
         i = tm.makeUnicodeIndex(100)
         i_rec = self.encode_decode(i)
-        self.assert_(i.equals(i_rec))
-
-        # alt encoding
-        i_rec = self.encode_decode(i,encoding='latin-1')
         self.assert_(i.equals(i_rec))
 
 class TestSeries(Test):

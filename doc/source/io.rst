@@ -35,6 +35,7 @@ object.
     * ``read_excel``
     * ``read_hdf``
     * ``read_sql``
+    * ``read_msgpack``
     * ``read_html``
     * ``read_stata``
     * ``read_clipboard``
@@ -45,6 +46,7 @@ The corresponding ``writer`` functions are object methods that are accessed like
     * ``to_excel``
     * ``to_hdf``
     * ``to_sql``
+    * ``to_msgpack``
     * ``to_html``
     * ``to_stata``
     * ``to_clipboard``
@@ -1322,6 +1324,12 @@ object serialization. This is a lightweight portable binary format, similar
 to binary JSON, that is highly space efficient, and provides good performance 
 both on the writing (serialization), and reading (deserialization).
 
+.. warning::
+
+   This is a very new feature of pandas. We intend to provide certain 
+   optimizations in the io of the ``msgpack`` data. We do not intend this
+   format to change (and will be backward compatible if we do).
+
 .. ipython:: python
 
    df = DataFrame(np.random.rand(5,2),columns=list('AB'))
@@ -1336,13 +1344,12 @@ You can pass a list of objects and you will receive them back on deserialization
    pd.to_msgpack('foo.msg', df, 'foo', np.array([1,2,3]), s)
    pd.read_msgpack('foo.msg')
 
-You can pass ``iterator=True`` to iterator over the unpacked results
+You can pass ``iterator=True`` to iterate over the unpacked results
 
 .. ipython:: python
 
    for o in pd.read_msgpack('foo.msg',iterator=True):
        print o
-
 
 You can pass ``append=True`` to the writer to append to an existing pack
 
@@ -1351,11 +1358,22 @@ You can pass ``append=True`` to the writer to append to an existing pack
    df.to_msgpack('foo.msg',append=True)
    pd.read_msgpack('foo.msg')
 
+Unlike other io methods, ``to_msgpack`` is available on both a per-object basis,
+``df.to_msgpack()`` and using the top-level ``pd.to_msgpack(...)`` where you
+can pack arbitrary collections of python lists, dicts, scalars, while intermixing
+pandas objects.
+
+.. ipython:: python
+
+   pd.to_msgpack('foo2.msg', { 'dict' : [ { 'df' : df }, { 'string' : 'foo' }, { 'scalar' : 1. }, { 's' : s } ] })
+   pd.read_msgpack('foo2.msg')
+
 .. ipython:: python
    :suppress:
    :okexcept:
 
    os.remove('foo.msg')
+   os.remove('foo2.msg')
 
 HDF5 (PyTables)
 ---------------

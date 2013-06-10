@@ -63,13 +63,7 @@ from pandas.core.common import needs_i8_conversion
 from pandas.core.internals import BlockManager, make_block
 import pandas.core.internals as internals
 
-try:
-    import msgpack
-    from msgpack import _packer, _unpacker
-    _USE_MSGPACK = True
-except:
-    _USE_MSGPACK = False
-
+from pandas.msgpack import Unpacker as _Unpacker, Packer as _Packer
 import zlib
 
 try:
@@ -96,12 +90,9 @@ def to_msgpack(path, *args, **kwargs):
              (default is False)
     compress : type of compressor (zlib or blosc), default to None (no compression)
     """
-    if not _USE_MSGPACK:
-        raise Exception("please install msgpack to create msgpack stores!")
-
     global compressor
-    compressor = kwargs.get('compress')
-    append = kwargs.get('append')
+    compressor = kwargs.pop('compress',None)
+    append = kwargs.pop('append',None)
     if append:
         f = open(path, 'a+b')
     else:
@@ -133,8 +124,6 @@ def read_msgpack(path, iterator=False, **kwargs):
     obj : type of object stored in file
 
     """
-    if not _USE_MSGPACK:
-        raise Exception("please install msgpack to read msgpack stores!")
     if iterator:
         return Iterator(path)
 
@@ -158,8 +147,11 @@ def dtype_for(t):
 
 c2f_dict = {'complex':    np.float64,
             'complex128': np.float64,
-            'complex256': np.float128,
             'complex64':  np.float32}
+
+# numpy 1.6.1 compat
+if hasattr(np,'float128'):
+    c2f_dict['complex256'] = np.float128
 
 def c2f(r, i, ctype_name):
     """
@@ -284,7 +276,7 @@ def encode(obj):
                  'columns' : obj.columns }
             for f in ['default_fill_value','default_kind']:
                 d[f] = getattr(obj,f,None)
-            d['data'] = dict([ (name,ss) for name,ss in obj.iteritems() ])
+            d['data'] = dict([ (name,ss) for name,ss in obj.iterkv() ])
             return d
         elif isinstance(obj, SparsePanel):
             d = {'typ' : 'sparse_panel',
@@ -292,7 +284,7 @@ def encode(obj):
                  'items' : obj.items }
             for f in ['default_fill_value','default_kind']:
                 d[f] = getattr(obj,f,None)
-            d['data'] = dict([ (name,df) for name,df in obj.iteritems() ])
+            d['data'] = dict([ (name,df) for name,df in obj.iterkv() ])
             return d
         else:
 
@@ -481,32 +473,30 @@ def unpack(packed, object_hook=decode,
                     unicode_errors=unicode_errors, 
                     object_pairs_hook=object_pairs_hook)
 
-if _USE_MSGPACK:
+class Packer(_Packer):
+    def __init__(self, default=encode, 
+                 encoding='utf-8',
+                 unicode_errors='strict',
+                 use_single_float=False):
+        super(Packer, self).__init__(default=default, 
+                                     encoding=encoding,
+                                     unicode_errors=unicode_errors,
+                                     use_single_float=use_single_float)
 
-    class Packer(_packer.Packer):
-        def __init__(self, default=encode, 
-                     encoding='utf-8',
-                     unicode_errors='strict',
-                     use_single_float=False):
-            super(Packer, self).__init__(default=default, 
-                                         encoding=encoding,
-                                         unicode_errors=unicode_errors,
-                                         use_single_float=use_single_float)
-
-    class Unpacker(_unpacker.Unpacker):
-        def __init__(self, file_like=None, read_size=0, use_list=False,
-                     object_hook=decode,
-                     object_pairs_hook=None, list_hook=None, encoding='utf-8',
-                     unicode_errors='strict', max_buffer_size=0):
-            super(Unpacker, self).__init__(file_like=file_like, 
-                                           read_size=read_size,    
-                                           use_list=use_list, 
-                                           object_hook=object_hook, 
-                                           object_pairs_hook=object_pairs_hook, 
-                                           list_hook=list_hook,
-                                           encoding=encoding, 
-                                           unicode_errors=unicode_errors, 
-                                           max_buffer_size=max_buffer_size)
+class Unpacker(_Unpacker):
+    def __init__(self, file_like=None, read_size=0, use_list=False,
+                 object_hook=decode,
+                 object_pairs_hook=None, list_hook=None, encoding='utf-8',
+                 unicode_errors='strict', max_buffer_size=0):
+        super(Unpacker, self).__init__(file_like=file_like, 
+                                       read_size=read_size,    
+                                       use_list=use_list, 
+                                       object_hook=object_hook, 
+                                       object_pairs_hook=object_pairs_hook, 
+                                       list_hook=list_hook,
+                                       encoding=encoding, 
+                                       unicode_errors=unicode_errors, 
+                                       max_buffer_size=max_buffer_size)
 
 class Iterator(object):
     """ manage the unpacking iteration,
