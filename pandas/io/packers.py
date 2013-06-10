@@ -231,14 +231,15 @@ def encode(obj):
             return {'typ' : 'period_index',
                     'klass' : obj.__class__.__name__,
                     'name' : getattr(obj,'name',None),
+                    'freq' : obj.freqstr,
                     'dtype': obj.dtype.num,
-                    'data': obj.tolist() }
+                    'data': convert(obj.asi8) }
         elif isinstance(obj, DatetimeIndex):
             return {'typ' : 'datetime_index',
                     'klass' : obj.__class__.__name__,
                     'name' : getattr(obj,'name',None),
                     'dtype': obj.dtype.num,
-                    'data': obj.values.view('i8').tolist(),
+                    'data': convert(obj.asi8),
                     'freq' : obj.freqstr,
                     'tz'   : obj.tz}
         elif isinstance(obj, MultiIndex):
@@ -246,7 +247,7 @@ def encode(obj):
                     'klass' : obj.__class__.__name__,
                     'names' : getattr(obj,'names',None),
                     'dtype': obj.dtype.num,
-                    'data': obj.tolist() }
+                    'data': convert(obj.values) }
         else:
             return {'typ' : 'index',
                     'klass' : obj.__class__.__name__,
@@ -395,7 +396,7 @@ def decode(obj):
     elif typ == 'multi_index':
         return globals()[obj['klass']].from_tuples(obj['data'],names=obj['names'])
     elif typ == 'period_index':
-        return globals()[obj['klass']](obj['data'],name=obj['name'])
+        return globals()[obj['klass']](obj['data'],name=obj['name'],freq=obj['freq'])
     elif typ == 'datetime_index':
         return globals()[obj['klass']](obj['data'],freq=obj['freq'],tz=obj['tz'],name=obj['name'])
     elif typ == 'series':

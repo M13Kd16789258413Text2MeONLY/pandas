@@ -1,5 +1,6 @@
 # coding: utf-8
 #cython: embedsignature=True
+#cython: profile=False
 
 from cpython cimport *
 cdef extern from "Python.h":
@@ -12,6 +13,7 @@ from libc.stdlib cimport *
 from libc.string cimport *
 from libc.limits cimport *
 
+import cython
 import numpy as np
 from numpy cimport *
 
@@ -156,6 +158,8 @@ cdef class Packer(object):
     def __dealloc__(self):
         free(self.pk.buf);
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef int _pack(self, object o, int nest_limit=DEFAULT_RECURSE_LIMIT) except -1:
         cdef long long llval
         cdef unsigned long long ullval
@@ -167,7 +171,9 @@ cdef class Packer(object):
         cdef dict d
         cdef object dtype
 
-        cdef int n,i,ival
+        cdef int n,i
+        cdef double f8val
+        cdef int64_t i8val
         cdef ndarray[float64_t,ndim=1] array_double
         cdef ndarray[int64_t,ndim=1] array_int
 
@@ -258,8 +264,8 @@ cdef class Packer(object):
 
                 for i in range(n):
 
-                   dval = array_double[i]
-                   ret = msgpack_pack_double(&self.pk, dval)
+                   f8val = array_double[i]
+                   ret = msgpack_pack_double(&self.pk, f8val)
                    if ret != 0: break
             elif dtype == 'int64':
                 array_int = o.ravel()
@@ -269,8 +275,8 @@ cdef class Packer(object):
 
                 for i in range(n):
 
-                   ival = array_int[i]
-                   ret = msgpack_pack_long(&self.pk, ival)
+                   i8val = array_int[i]
+                   ret = msgpack_pack_long(&self.pk, i8val)
                    if ret != 0: break
 
         elif self._default:
