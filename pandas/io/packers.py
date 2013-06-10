@@ -190,10 +190,14 @@ def convert(values):
         v = v.tostring()
         return blosc.compress(v,typesize=dtype.itemsize)
 
+    # ndarray (on original dtype)
+    if dtype == 'float64' or dtype == 'int64':
+        return v
+
     # as a list
     return v.tolist()
 
-def unconvert(values, dtype, compress):
+def unconvert(values, dtype, compress=None):
 
     if dtype == np.object_:
         return np.array(values,dtype=object)
@@ -347,7 +351,7 @@ def encode(obj):
                  'klass' : obj.__class__.__name__,
                  'indices' : obj.indices,
                  'length' : obj.length }
-    elif isinstance(obj, np.ndarray):
+    elif isinstance(obj, np.ndarray) and obj.dtype not in ['float64','int64']:
         return {'typ' : 'ndarray',
                 'shape': obj.shape,
                 'ndim': obj.ndim,
@@ -432,7 +436,7 @@ def decode(obj):
     elif typ == 'int_index':
         return globals()[obj['klass']](obj['length'],obj['indices'])
     elif typ == 'ndarray':
-        return unconvert(obj['data'],np.typeDict[obj['dtype']],obj['compress']).reshape(obj['shape'])
+        return unconvert(obj['data'],np.typeDict[obj['dtype']],obj.get('compress')).reshape(obj['shape'])
     elif typ == 'np_scalar':
         if obj.get('sub_typ') == 'np_complex':
             return c2f(obj['real'], obj['imag'], obj['dtype'])
