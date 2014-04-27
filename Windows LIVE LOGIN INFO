@@ -1,0 +1,29 @@
+                 
+WL.init({ client_id: clientId, redirect_uri: redirectUri });
+
+WL.login({ "scope": "wl.basic" }).then(
+    function (response) {
+        showUserData();
+    },
+    function (response) {
+        log("Could not connect, status = " + response.status);
+    }
+);
+
+function showUserData() {
+    WL.api({ path: "/me", method: "GET" }).then(
+        function (response) {
+            log(JSON.stringify(response).replace(/,/g, "\n"));
+        },
+        function (response) {
+            log("API call failed: " + JSON.stringify(response.error).replace(/,/g, "\n"));
+        }
+    );
+}
+                    
+function log(message) {
+    var child = document.createTextNode(message);
+    var parent = document.getElementById('JsOutputDiv') || document.body;
+    parent.appendChild(child);
+    parent.appendChild(document.createElement("br"));
+}
